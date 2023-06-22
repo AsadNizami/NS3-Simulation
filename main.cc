@@ -35,7 +35,7 @@ main (int argc, char *argv[])
   uint16_t numerology = 0;
 
   uint16_t gNbNum = 1;
-  uint16_t ueNumPergNb = 1;
+  uint16_t ueNumPergNb = 6;
 
   double centralFrequency = 6e9;
   double bandwidth = 50e6;
@@ -364,12 +364,6 @@ main (int argc, char *argv[])
   std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
   std::cout << "  Mean Packet Loss: " << averagePacketLoss << "\n";
   
-
-  Ptr<UdpClient> clientApp = clientApps.Get (0)->GetObject<UdpClient> ();
-  Ptr<UdpServer> serverApp = serverApps.Get (0)->GetObject<UdpServer> ();
-  std::cout << "\n Total UDP throughput (bps):" <<
-  (serverApp->GetReceived () * udpPacketSize * 8) / (simTime - udpAppStartTime) << std::endl;
-
   Simulator::Destroy ();
   return 0;
 }
