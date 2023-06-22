@@ -18,14 +18,6 @@ NS_LOG_COMPONENT_DEFINE ("3gppChannelNumerologiesExample");
 int
 main (int argc, char *argv[])
 {
-  // enable logging or not
-  bool logging = false;
-  if (logging)
-    {
-      LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-      LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
-      LogComponentEnable ("LtePdcp", LOG_LEVEL_INFO);
-    }
 
   // set simulation time and mobility
   double simTime = 5; // seconds
@@ -118,7 +110,7 @@ main (int argc, char *argv[])
   nrHelper->SetSchedulerAttribute ("FixedMcsDl", BooleanValue (useFixedMcs));
   nrHelper->SetSchedulerAttribute ("FixedMcsUl", BooleanValue (useFixedMcs));
 
-  if (useFixedMcs == true)
+  if (useFixedMcs)
     {
       nrHelper->SetSchedulerAttribute ("StartingMcsDl", UintegerValue (fixedMcs));
       nrHelper->SetSchedulerAttribute ("StartingMcsUl", UintegerValue (fixedMcs));
@@ -142,7 +134,6 @@ main (int argc, char *argv[])
   nrHelper->SetBeamformingHelper (idealBeamformingHelper);
 
   Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod",TimeValue (MilliSeconds (0)));
-//  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (0)));
   nrHelper->SetPathlossAttribute ("ShadowingEnabled", BooleanValue (false));
 
   // Error Model: UE and GNB with same spectrum error model.
@@ -221,7 +212,6 @@ main (int argc, char *argv[])
     {
       DynamicCast<NrUeNetDevice> (*it)->UpdateConfig ();
     }
-
 
   // create the internet and install the IP stack on the UEs
   // get SGW/PGW and create a single RemoteHost
@@ -319,21 +309,12 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds (simTime));
   clientApps.Stop (Seconds (simTime));
 
-
-  // enable the traces provided by the nr module
-  //nrHelper->EnableTraces();
-
-
   FlowMonitorHelper flowmonHelper;
   NodeContainer endpointNodes;
   endpointNodes.Add (remoteHost);
   endpointNodes.Add (ueNodes);
 
   Ptr<ns3::FlowMonitor> monitor = flowmonHelper.Install (endpointNodes);
-  //monitor->SetAttribute ("DelayBinWidth", DoubleValue (0.001));
-  //monitor->SetAttribute ("JitterBinWidth", DoubleValue (0.001));
-  //monitor->SetAttribute ("PacketSizeBinWidth", DoubleValue (20));
-
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
@@ -367,5 +348,4 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
 
