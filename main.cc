@@ -203,13 +203,11 @@ main (int argc, char *argv[])
 
   // When all the configuration is done, explicitly call UpdateConfig ()
 
-  for (auto it = gNbNetDev.Begin (); it != gNbNetDev.End (); ++it)
-    {
+  for (auto it = gNbNetDev.Begin (); it != gNbNetDev.End (); ++it) {
       DynamicCast<NrGnbNetDevice> (*it)->UpdateConfig ();
     }
 
-  for (auto it = ueNetDev.Begin (); it != ueNetDev.End (); ++it)
-    {
+  for (auto it = ueNetDev.Begin (); it != ueNetDev.End (); ++it) {
       DynamicCast<NrUeNetDevice> (*it)->UpdateConfig ();
     }
 
@@ -331,7 +329,6 @@ main (int argc, char *argv[])
 
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
-
         // Measure the duration of the flow from receiver's perspective
         double rxDuration = i->second.timeLastRxPacket.GetSeconds () - i->second.timeFirstTxPacket.GetSeconds ();
 
@@ -343,7 +340,7 @@ main (int argc, char *argv[])
       
   std::cout << "\n\n  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
   std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Mean Packet Loss: " << averagePacketLoss << "\n";
+  std::cout << "  Mean Packet Loss: " << averagePacketLoss / stats.size() << "\n";
   
   Simulator::Destroy ();
   return 0;
