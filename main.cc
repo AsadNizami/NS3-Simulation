@@ -18,7 +18,6 @@ NS_LOG_COMPONENT_DEFINE ("3gppChannelNumerologiesExample");
 int
 main (int argc, char *argv[])
 {
-
   // set simulation time and mobility
   double simTime = 5; // seconds
   double udpAppStartTime = 0.4; //seconds
@@ -28,7 +27,7 @@ main (int argc, char *argv[])
   uint16_t numerology = 0;
 
   uint16_t gNbNum = 1;
-  uint16_t ueNumPergNb = 6;
+  uint16_t ueNumPergNb = 1;
 
   double centralFrequency = 6e9;
   double bandwidth = 50e6;
@@ -48,20 +47,20 @@ main (int argc, char *argv[])
   cmd.AddValue ("numerology",
                 "The numerology to be used.",
                 numerology);
+  cmd.AddValue ("seed",
+                "Value for seed",
+                seed);
   cmd.AddValue ("udpFullBuffer",
                 "Whether to set the full buffer traffic; if this parameter is set then the udpInterval parameter"
                 "will be neglected",
                 udpFullBuffer);
   cmd.AddValue ("simTime",
                 "Total simulation time",
-                simTime);
-  cmd.AddValue("seedValue",
-  		"Value of the seed",
-  		seed);  
+                simTime);  
                         
   cmd.Parse (argc, argv);
-  
-  if (numerology == 3)	centralFrequency = 28e9;
+
+  if (numerology == 3)  centralFrequency = 28e9;
   RngSeedManager::SetSeed(seed);
   RngSeedManager::SetRun(5);
 
@@ -115,7 +114,7 @@ main (int argc, char *argv[])
   nrHelper->SetSchedulerAttribute ("FixedMcsDl", BooleanValue (useFixedMcs));
   nrHelper->SetSchedulerAttribute ("FixedMcsUl", BooleanValue (useFixedMcs));
 
-  if (useFixedMcs)
+  if (useFixedMcs == true)
     {
       nrHelper->SetSchedulerAttribute ("StartingMcsDl", UintegerValue (fixedMcs));
       nrHelper->SetSchedulerAttribute ("StartingMcsUl", UintegerValue (fixedMcs));
@@ -139,6 +138,7 @@ main (int argc, char *argv[])
   nrHelper->SetBeamformingHelper (idealBeamformingHelper);
 
   Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod",TimeValue (MilliSeconds (0)));
+//  nrHelper->SetChannelConditionModelAttribute ("UpdatePeriod", TimeValue (MilliSeconds (0)));
   nrHelper->SetPathlossAttribute ("ShadowingEnabled", BooleanValue (false));
 
   // Error Model: UE and GNB with same spectrum error model.
@@ -208,13 +208,16 @@ main (int argc, char *argv[])
 
   // When all the configuration is done, explicitly call UpdateConfig ()
 
-  for (auto it = gNbNetDev.Begin (); it != gNbNetDev.End (); ++it) {
+  for (auto it = gNbNetDev.Begin (); it != gNbNetDev.End (); ++it)
+    {
       DynamicCast<NrGnbNetDevice> (*it)->UpdateConfig ();
     }
 
-  for (auto it = ueNetDev.Begin (); it != ueNetDev.End (); ++it) {
+  for (auto it = ueNetDev.Begin (); it != ueNetDev.End (); ++it)
+    {
       DynamicCast<NrUeNetDevice> (*it)->UpdateConfig ();
     }
+
 
   // create the internet and install the IP stack on the UEs
   // get SGW/PGW and create a single RemoteHost
@@ -331,8 +334,7 @@ main (int argc, char *argv[])
   double averageFlowThroughput = 0.0;
   double averageFlowDelay = 0.0;
   double averagePacketLoss = 0;
-  double TxPackets = 0;
-	
+
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
         // Measure the duration of the flow from receiver's perspective
@@ -342,12 +344,11 @@ main (int argc, char *argv[])
         averageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
         
         averagePacketLoss += (i->second.txPackets - i->second.rxPackets);
-	TxPackets += i->second.txPackets;
       }
       
   std::cout << "\n\n  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
   std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Mean Packet Loss: " << (averagePacketLoss / TxPackets) / stats.size() << "\n";
+  std::cout << "  Mean Packet Loss: " << averagePacketLoss << "\n";
   
   Simulator::Destroy ();
   return 0;
