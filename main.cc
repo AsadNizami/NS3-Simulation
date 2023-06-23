@@ -22,6 +22,7 @@ main (int argc, char *argv[])
   // set simulation time and mobility
   double simTime = 5; // seconds
   double udpAppStartTime = 0.4; //seconds
+  int seed = 17;
 
   //other simulation parameters default values
   uint16_t numerology = 0;
@@ -47,18 +48,22 @@ main (int argc, char *argv[])
   cmd.AddValue ("numerology",
                 "The numerology to be used.",
                 numerology);
-  cmd.AddValue ("frequency",
-                "The system frequency",
-                centralFrequency);
   cmd.AddValue ("udpFullBuffer",
                 "Whether to set the full buffer traffic; if this parameter is set then the udpInterval parameter"
                 "will be neglected",
                 udpFullBuffer);
   cmd.AddValue ("simTime",
                 "Total simulation time",
-                simTime);  
+                simTime);
+  cmd.AddValue("seedValue",
+  		"Value of the seed",
+  		seed);  
                         
   cmd.Parse (argc, argv);
+  
+  if (numerology == 3)	centralFrequency = 28e9;
+  RngSeedManager::SetSeed(seed);
+  RngSeedManager::SetRun(5);
 
   // setup the nr simulation
   Ptr<NrHelper> nrHelper = CreateObject<NrHelper> ();
