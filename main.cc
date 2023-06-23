@@ -21,7 +21,7 @@ main (int argc, char *argv[])
   // set simulation time and mobility
   double simTime = 5; // seconds
   double udpAppStartTime = 0.4; //seconds
-  int seed = 317;
+  int seed = 17;
 
   //other simulation parameters default values
   uint16_t numerology = 0;
