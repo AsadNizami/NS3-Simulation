@@ -21,13 +21,13 @@ main (int argc, char *argv[])
   // set simulation time and mobility
   double simTime = 5; // seconds
   double udpAppStartTime = 0.4; //seconds
-  int seed = 17;
+  int seed = 317;
 
   //other simulation parameters default values
   uint16_t numerology = 0;
 
   uint16_t gNbNum = 1;
-  uint16_t ueNumPergNb = 1;
+  uint16_t ueNumPergNb = 6;
 
   double centralFrequency = 6e9;
   double bandwidth = 50e6;
@@ -40,7 +40,6 @@ main (int argc, char *argv[])
   // Where we will store the output files.
   std::string simTag = "default";
   std::string outputDir = "./";
-
 
   CommandLine cmd;
 
@@ -110,7 +109,7 @@ main (int argc, char *argv[])
   nrHelper->SetGnbPhyAttribute ("Numerology", UintegerValue (numerology));
 
   // Scheduler
-  nrHelper->SetSchedulerTypeId (TypeId::LookupByName ("ns3::NrMacSchedulerTdmaRR"));
+  nrHelper->SetSchedulerTypeId (TypeId::LookupByName ("ns3::NrMacSchedulerTdmaMR"));
   nrHelper->SetSchedulerAttribute ("FixedMcsDl", BooleanValue (useFixedMcs));
   nrHelper->SetSchedulerAttribute ("FixedMcsUl", BooleanValue (useFixedMcs));
 
@@ -176,7 +175,7 @@ main (int argc, char *argv[])
 
   const double gNbHeight = 10;
   const double ueHeight = 1.5;
-  int uesCoordsX[] = {10, 1000, 3000, -10, -1000, -3000};
+  double uesCoordsX[] = {10, -10, 1000, -1000, 3000, -3000};
   int ues_y = 0;
 
     gNbNodes.Create (gNbNum);
@@ -184,7 +183,7 @@ main (int argc, char *argv[])
 
     // setting position for gNb and ues
 	bsPositionAlloc->Add(Vector(0, 0, gNbHeight));
-	for (auto ues_x: uesCoordsX)	utPositionAlloc->Add(Vector(ues_x, ues_y, ueHeight));
+	for (auto ues_x: uesCoordsX)	utPositionAlloc->Add(Vector(ues_x / 1000, ues_y, ueHeight));
 
     
   mobility.SetPositionAllocator (bsPositionAlloc);
@@ -270,7 +269,7 @@ main (int argc, char *argv[])
   dlClient.SetAttribute ("MaxPackets", UintegerValue (0xFFFFFFFF));
   if (udpFullBuffer)
     {
-      double bitRate = 30000000; // 30 Mbps will saturate the NR system of 20 MHz with the NrEesmIrT1 error model
+      double bitRate = 75000000; // 30 Mbps will saturate the NR system of 20 MHz with the NrEesmIrT1 error model
       bitRate /= ueNumPergNb;    // Divide the cell capacity among UEs
       if (bandwidth > 20e6)
         {
@@ -333,22 +332,33 @@ main (int argc, char *argv[])
 
   double averageFlowThroughput = 0.0;
   double averageFlowDelay = 0.0;
-  double averagePacketLoss = 0;
-
+  double PacketLost = 0;
+  int j = 0;
+  int totalPackets = 0;
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
-    {
+    { j++;
+      std::cout << "\n\nUE Number " << j << "\n";
+        std::cout << "TX Packets " << i->second.txPackets << "\n";
+        std::cout << "RX Packets " << i->second.rxPackets << "\n";
+        totalPackets += i->second.txPackets;
+
         // Measure the duration of the flow from receiver's perspective
         double rxDuration = i->second.timeLastRxPacket.GetSeconds () - i->second.timeFirstTxPacket.GetSeconds ();
 
         averageFlowThroughput += i->second.rxBytes * 8.0 / rxDuration / 1000 / 1000;
-        averageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
+        if (i->second.rxPackets > 0)
+          averageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
         
-        averagePacketLoss += (i->second.txPackets - i->second.rxPackets);
+        PacketLost += (i->second.txPackets - i->second.rxPackets);
+          std::cout << "  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
+  std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
+  std::cout << "  Packet Lost " << PacketLost  << "\n";
       }
-      
+  
+  std::cout << "Stat.size " << stats.size() << "\n";
   std::cout << "\n\n  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
   std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Mean Packet Loss: " << averagePacketLoss << "\n";
+  std::cout << "  Packet Loss Rate " << PacketLost / totalPackets << "\n";
   
   Simulator::Destroy ();
   return 0;
