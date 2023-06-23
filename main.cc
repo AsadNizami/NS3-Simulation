@@ -37,6 +37,9 @@ main (int argc, char *argv[])
   bool udpFullBuffer = true;
   uint8_t fixedMcs = 28;
   bool useFixedMcs = true;
+  std::string scheduler = "ns3::NrMacScheduler";
+  std::string schedulerOpt = "TdmaMR";
+
   // Where we will store the output files.
   std::string simTag = "default";
   std::string outputDir = "./";
@@ -56,8 +59,17 @@ main (int argc, char *argv[])
   cmd.AddValue ("simTime",
                 "Total simulation time",
                 simTime);  
+
+  cmd.AddValue("schedulerOpt",
+              "Algorithm for scheduler",
+              schedulerOpt);
                         
   cmd.Parse (argc, argv);
+  std::cout << "Numerology: " << numerology << "\n";
+  std::cout << "Seed: " << seed << "\n";
+  std::cout << "updFullBuffer: " << udpFullBuffer << "\n";
+  std::cout << "simTime: " << simTime << "\n";
+  std::cout << "SchedulerOpt: " << schedulerOpt << "\n";
 
   if (numerology == 3)  centralFrequency = 28e9;
   RngSeedManager::SetSeed(seed);
@@ -109,7 +121,7 @@ main (int argc, char *argv[])
   nrHelper->SetGnbPhyAttribute ("Numerology", UintegerValue (numerology));
 
   // Scheduler
-  nrHelper->SetSchedulerTypeId (TypeId::LookupByName ("ns3::NrMacSchedulerTdmaMR"));
+  nrHelper->SetSchedulerTypeId (TypeId::LookupByName (scheduler + schedulerOpt));
   nrHelper->SetSchedulerAttribute ("FixedMcsDl", BooleanValue (useFixedMcs));
   nrHelper->SetSchedulerAttribute ("FixedMcsUl", BooleanValue (useFixedMcs));
 
