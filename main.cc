@@ -326,7 +326,8 @@ main (int argc, char *argv[])
   double averageFlowThroughput = 0.0;
   double averageFlowDelay = 0.0;
   double averagePacketLoss = 0;
-
+  double TxPackets = 0;
+	
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
         // Measure the duration of the flow from receiver's perspective
@@ -336,11 +337,12 @@ main (int argc, char *argv[])
         averageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
         
         averagePacketLoss += (i->second.txPackets - i->second.rxPackets);
+	TxPackets += i->second.txPackets;
       }
       
   std::cout << "\n\n  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
   std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Mean Packet Loss: " << averagePacketLoss / stats.size() << "\n";
+  std::cout << "  Mean Packet Loss: " << (averagePacketLoss / TxPackets) / stats.size() << "\n";
   
   Simulator::Destroy ();
   return 0;
