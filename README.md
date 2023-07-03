@@ -15,9 +15,9 @@ NS3
 
 ## How to run:
 
-1. Place the Group1-Asg.cc file inside the scratch directory.
-2. Run ~$ ./waf --run "scratch/Group1-Asg1.cc --numerology=<numerology> --seed=<seed> --udpFullBuffer=<0/1> --simTime=<time> --schedulerOpt=<algorithm>"
+1. Place the main.cc file inside the scratch directory.
+2. Run ~$ ./waf --run "scratch/main.cc --numerology=<numerology> --seed=<seed> --udpFullBuffer=<0/1> --simTime=<time> --schedulerOpt=<algorithm>"
 
 
-*The Group1-Asg.cc file is heavily inspired from 5G-LENA example- https://github.com/QiuYukang/5G-LENA/blob/master/examples/cttc-3gpp-channel-nums.cc*
+*The main.cc file is heavily inspired from 5G-LENA example- https://github.com/QiuYukang/5G-LENA/blob/master/examples/cttc-3gpp-channel-nums.cc*
 
