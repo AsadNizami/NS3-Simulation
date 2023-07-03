@@ -19,16 +19,17 @@ int
 main (int argc, char *argv[])
 {
   // set simulation time and mobility
-  double simTime = 5; // seconds
+  double simTime = 20; // seconds
   double udpAppStartTime = 0.4; //seconds
   int seed = 17;
 
   //other simulation parameters default values
-  uint16_t numerology = 0;
+  uint16_t numerology = 1;
 
   uint16_t gNbNum = 1;
   uint16_t ueNumPergNb = 6;
-
+  bool mobile = false;
+  double speed = 10;
   double centralFrequency = 6e9;
   double bandwidth = 50e6;
   double txPower = 23;
@@ -45,25 +46,29 @@ main (int argc, char *argv[])
   std::string outputDir = "./";
 
   CommandLine cmd;
-
   cmd.AddValue ("numerology",
-                "The numerology to be used.",
-                numerology);
+		"The numerology to be used.",
+		numerology);
   cmd.AddValue ("seed",
                 "Value for seed",
                 seed);
+  cmd.AddValue ("speed",
+		"Value for speed",
+		speed);
   cmd.AddValue ("udpFullBuffer",
                 "Whether to set the full buffer traffic; if this parameter is set then the udpInterval parameter"
                 "will be neglected",
                 udpFullBuffer);
   cmd.AddValue ("simTime",
                 "Total simulation time",
-                simTime);  
-
+                simTime);
   cmd.AddValue("schedulerOpt",
               "Algorithm for scheduler",
               schedulerOpt);
-                        
+  cmd.AddValue("mobile",
+	       "If the UEs are mobile or not",
+	       mobile);
+
   cmd.Parse (argc, argv);
   std::cout << "Numerology: " << numerology << "\n";
   std::cout << "Seed: " << seed << "\n";
@@ -181,7 +186,25 @@ main (int argc, char *argv[])
   NodeContainer gNbNodes;
   NodeContainer ueNodes;
   MobilityHelper mobility;
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+
+  if (mobile)
+  {
+    std::string speedStr = "ns3::ConstantRandomVariable[Constant=" + std::to_string(speed) + "]";
+    mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+			     "Mode",
+			     StringValue("Time"),
+			     "Time",
+			     StringValue("2s"),
+			     "Speed",
+			     StringValue(speedStr),
+			     "Bounds",
+			     RectangleValue(Rectangle(-3000, 3000, -3000, 3000)));
+  }
+  else
+  {
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  }
+
   Ptr<ListPositionAllocator> bsPositionAlloc = CreateObject<ListPositionAllocator> ();
   Ptr<ListPositionAllocator> utPositionAlloc = CreateObject<ListPositionAllocator> ();
 
@@ -195,9 +218,9 @@ main (int argc, char *argv[])
 
     // setting position for gNb and ues
 	bsPositionAlloc->Add(Vector(0, 0, gNbHeight));
-	for (auto ues_x: uesCoordsX)	utPositionAlloc->Add(Vector(ues_x / 1000, ues_y, ueHeight));
+	for (auto ues_x: uesCoordsX)	utPositionAlloc->Add(Vector(ues_x / 200, ues_y, ueHeight));
 
-    
+
   mobility.SetPositionAllocator (bsPositionAlloc);
   mobility.Install (gNbNodes);
 
@@ -281,7 +304,7 @@ main (int argc, char *argv[])
   dlClient.SetAttribute ("MaxPackets", UintegerValue (0xFFFFFFFF));
   if (udpFullBuffer)
     {
-      double bitRate = 75000000; // 30 Mbps will saturate the NR system of 20 MHz with the NrEesmIrT1 error model
+      double bitRate = 30000000; // 30 Mbps will saturate the NR system of 20 MHz with the NrEesmIrT1 error model
       bitRate /= ueNumPergNb;    // Divide the cell capacity among UEs
       if (bandwidth > 20e6)
         {
@@ -343,8 +366,11 @@ main (int argc, char *argv[])
   FlowMonitor::FlowStatsContainer stats = monitor->GetFlowStats ();
 
   double averageFlowThroughput = 0.0;
+  double TotalaverageFlowThroughput = 0.0;
   double averageFlowDelay = 0.0;
-  double PacketLost = 0;
+  double TotalaverageFlowDelay = 0.0;
+  double PacketsLost = 0;
+  double TotalPacketsLost = 0;
   int j = 0;
   int totalPackets = 0;
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
@@ -357,22 +383,24 @@ main (int argc, char *argv[])
         // Measure the duration of the flow from receiver's perspective
         double rxDuration = i->second.timeLastRxPacket.GetSeconds () - i->second.timeFirstTxPacket.GetSeconds ();
 
-        averageFlowThroughput += i->second.rxBytes * 8.0 / rxDuration / 1000 / 1000;
+        averageFlowThroughput = i->second.rxBytes * 8.0 / rxDuration / 1000 / 1000;
+        TotalaverageFlowThroughput += i->second.rxBytes * 8.0 / rxDuration / 1000 / 1000;
         if (i->second.rxPackets > 0)
-          averageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
+        averageFlowDelay = 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
+        TotalaverageFlowDelay += 1000 * i->second.delaySum.GetSeconds () / i->second.rxPackets;
         
-        PacketLost += (i->second.txPackets - i->second.rxPackets);
-          std::cout << "  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
-  std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Packet Lost " << PacketLost  << "\n";
+        PacketsLost = (i->second.txPackets - i->second.rxPackets);
+        TotalPacketsLost += (i->second.txPackets - i->second.rxPackets);
+        std::cout << "  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
+  	std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
+  	std::cout << "  Packet Lost " << PacketsLost  << "\n";
       }
   
   std::cout << "Stat.size " << stats.size() << "\n";
-  std::cout << "\n\n  Mean flow throughput: " << averageFlowThroughput / stats.size () << "\n";
-  std::cout << "  Mean flow delay: " << averageFlowDelay / stats.size () << "\n";
-  std::cout << "  Packet Loss Rate " << PacketLost / totalPackets << "\n";
+  std::cout << "\n\n  Mean flow throughput: " << TotalaverageFlowThroughput / stats.size () << "\n";
+  std::cout << "  Mean flow delay: " << TotalaverageFlowDelay / stats.size () << "\n";
+  std::cout << "  Packet Loss Rate " << TotalPacketsLost / totalPackets << "\n";
   
   Simulator::Destroy ();
   return 0;
 }
-
